@@ -44,6 +44,12 @@ class Bgp_globalFacts(object):
             facts_argument_spec = spec
 
         self.generated_spec = utils.generate_dict(facts_argument_spec)
+    
+    def get_config(self, connection):
+        """Wrapper method for `connection.get()`
+        This method exists solely to allow the unit test framework to mock device connection calls.
+        """
+        return connection.get("show running-config router bgp")
 
     def populate_facts(self, connection, ansible_facts, data=None):
         """ Populate the facts for Bgp_global network resource
@@ -57,9 +63,10 @@ class Bgp_globalFacts(object):
         """
         facts = {}
         objs = []
+        bgp_global_config = []
 
         if not data:
-            data = connection.get('show running-config router bgp')
+            data = self.get_config(connection)
             #vrf_data = self._flatten_config(data, "vrf")
             neighbor_data = self._flatten_config(data, "neighbor")
             rpki_server_data = self._flatten_config(neighbor_data, "rpki server")
@@ -67,7 +74,7 @@ class Bgp_globalFacts(object):
 
 
             # remove address_family configs from bgp_global
-            bgp_global_config = []
+
             start = False
             for bgp_line in data.splitlines():
                 if "address-family" in bgp_line:
